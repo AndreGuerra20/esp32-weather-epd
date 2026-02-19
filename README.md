@@ -47,4 +47,4 @@ Unfortunately i still hadnt had the tools to solder the bme280 sensor to its fem
 | [ ] | Create a locale_pt_PT | Create the file to update the text to pt_PT
 | [ ] | Solder sensor headers | ----- 
 | [ ] | Hide the sensor behind the display | ----- 
-| [ ] | Save the values in a Database | -----
+| [✅] | Save the values in a Database | Use HTTPS request for updating a supabase database with the values read from the sensors

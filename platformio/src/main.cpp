@@ -287,7 +287,7 @@ void setup()
     powerOffDisplay();
     beginDeepSleep(startTime, &timeInfo);
   }
-  killWiFi(); // WiFi no longer needed
+  //killWiFi(); // WiFi no longer needed
 
   // GET INDOOR TEMPERATURE AND HUMIDITY, start BMEx80...
   pinMode(PIN_BME_PWR, OUTPUT);
@@ -341,6 +341,17 @@ void setup()
   getRefreshTimeStr(refreshTimeStr, timeConfigured, &timeInfo);
   String dateStr;
   getDateStr(dateStr, &timeInfo);
+  
+  // Send sensor data to database
+  WiFiClientSecure clientNoCA;
+  clientNoCA.setInsecure();
+  // Post sensor reading to database. 
+  int postStatus = postSupabaseSensorReading(clientNoCA, String(inTemp).c_str(), String(inHumidity).c_str());
+  if (postStatus != HTTP_CODE_CREATED)
+  {
+    Serial.println("Failed to post sensor reading to database: " + String(postStatus) + ": " + getHttpResponsePhrase(postStatus));
+  }
+  killWiFi();
 
   // RENDER FULL REFRESH
   initDisplay();
