@@ -276,6 +276,85 @@ bool waitForSNTPSync(tm *timeInfo)
   return httpResponse;
 } // getOWMairpollution
 
+static const char* SUPABASE_HOST = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+static const int   SUPABASE_PORT = 443;
+static const char* SUPABASE_PATH = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+static const char* SUPABASE_APIKEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+#ifdef USE_HTTP
+int postSupabaseSensorReading(WiFiClient &client, const char* temperature, const char* humidity)
+#else
+int postSupabaseSensorReading(WiFiClientSecure &client, const char* temperature, const char* humidity)
+#endif
+{
+  int attempts = 0;
+  bool rxSuccess = false;
+  int httpResponse = 0;
+
+  // Create JSON payload for POST request. 
+  String payload = "{";
+  payload += "\"temperature\":\""; payload += temperature; payload += "\",";
+  payload += "\"humidity\":\"";    payload += humidity;    payload += "\"";
+  payload += "}";
+
+  // Only print the sanitized URI to terminal to help with debugging. 
+  String sanitizedUri = String("https://") + SUPABASE_HOST + SUPABASE_PATH;
+  Serial.print("[HTTP] POST: ");
+  Serial.println(sanitizedUri);
+
+  while (!rxSuccess && attempts < 3)
+  {
+    wl_status_t connection_status = WiFi.status();
+    if (connection_status != WL_CONNECTED)
+    {
+      // -512 offset distinguishes these errors from httpClient errors
+      return -512 - static_cast<int>(connection_status);
+    }
+
+    HTTPClient http;
+    http.setConnectTimeout(HTTP_CLIENT_TCP_TIMEOUT);
+    http.setTimeout(HTTP_CLIENT_TCP_TIMEOUT);
+
+    // begin(host, port, uri)
+    http.begin(client, SUPABASE_HOST, SUPABASE_PORT, SUPABASE_PATH);
+
+    // Supabase requires these headers for authentication and to specify the content type 
+    http.addHeader("apikey", SUPABASE_APIKEY);
+    //http.addHeader("Authorization", String("Bearer ") + SUPABASE_APIKEY);
+    http.addHeader("content-type", "application/json");
+    http.addHeader("prefer", "return=minimal");
+
+    httpResponse = http.POST(payload);
+
+    // Supabase returns 201 Created on success, but we'll also accept 200 OK and 204 No Content just in case.
+    if (httpResponse > 0 && (httpResponse == 200 || httpResponse == 201 || httpResponse == 204))
+    {
+      rxSuccess = true;
+    }
+    else
+    {
+      // If the POST request failed, print the response body (which may contain an error message) to the terminal for debugging.
+      String err = http.getString();
+      if (err.length())
+      {
+        Serial.print("  [BODY] ");
+        Serial.println(err);
+      }
+    }
+
+    client.stop();
+    http.end();
+
+    Serial.print("  ");
+    Serial.print(httpResponse);
+    Serial.println(httpResponse > 0 ? " OK/HTTP" : " HTTPClient error");
+
+    ++attempts;
+  }
+
+  return httpResponse;
+}
+
 /* Prints debug information about heap usage.
  */
 void printHeapUsage() {

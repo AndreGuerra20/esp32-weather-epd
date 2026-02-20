@@ -34,9 +34,11 @@ bool printLocalTime(tm *timeInfo);
 #ifdef USE_HTTP
   int getOWMonecall(WiFiClient &client, owm_resp_onecall_t &r);
   int getOWMairpollution(WiFiClient &client, owm_resp_air_pollution_t &r);
+  int postSupabaseSensorReading(WiFiClient &client, const char* temperature, const char* humidity);
 #else
   int getOWMonecall(WiFiClientSecure &client, owm_resp_onecall_t &r);
   int getOWMairpollution(WiFiClientSecure &client, owm_resp_air_pollution_t &r);
+  int postSupabaseSensorReading(WiFiClientSecure &client, const char* temperature, const char* humidity);
 #endif
 
 
